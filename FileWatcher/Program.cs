@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Security.Permissions;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
-namespace WindowsService1
+namespace FileWatcher
 {
     static class Program
     {
@@ -55,10 +51,7 @@ namespace WindowsService1
             watchDir = ReplaceEnvVariables(watchDir);
             exec = ReplaceEnvVariables(exec);
 
-            Console.WriteLine(watchDir);
-            Console.WriteLine(exec);
-
-            if (string.IsNullOrWhiteSpace(watchDir) || string.IsNullOrWhiteSpace(exec))
+            if (string.IsNullOrEmpty(watchDir) || string.IsNullOrEmpty(exec))
             {
                 Environment.Exit(0);
             }
@@ -89,27 +82,34 @@ namespace WindowsService1
 
         private static void OnChanged(object source, FileSystemEventArgs e)
         {
-            try
+            for (int i = 0; i < execCount; i++)
             {
-                watcher.EnableRaisingEvents = false;
-
-                Process myProcess = new Process();
                 try
                 {
-                    myProcess.StartInfo.UseShellExecute = false;
-                    myProcess.StartInfo.FileName = exec;
-                    myProcess.StartInfo.CreateNoWindow = true;
-                    myProcess.Start();
-                }
-                catch (Exception)
-                {
+                    watcher.EnableRaisingEvents = false;
 
+                    Process myProcess = new Process();
+                    try
+                    {
+                        myProcess.StartInfo.UseShellExecute = false;
+                        myProcess.StartInfo.FileName = exec;
+                        myProcess.StartInfo.CreateNoWindow = true;
+                        myProcess.Start();
+                    }
+                    catch (Exception)
+                    {
+
+                    }
                 }
+                finally
+                {
+                    watcher.EnableRaisingEvents = true;
+                }
+
+                System.Threading.Thread.Sleep(execCountPause);
             }
-            finally
-            {
-                watcher.EnableRaisingEvents = true;
-            }
+
+            
         }
 
         private static string ReplaceEnvVariables(string str)
@@ -119,7 +119,6 @@ namespace WindowsService1
                 string keyVal = (string)variable.Key;
                 if (str.IndexOf(keyVal, StringComparison.CurrentCultureIgnoreCase) >= 0)
                 {
-                    Console.WriteLine(keyVal);
                     str = Regex.Replace(str, $"%{keyVal}%", variable.Value.ToString(), RegexOptions.IgnoreCase);
                 }
             }
