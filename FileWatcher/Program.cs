@@ -77,6 +77,7 @@ namespace FileWatcher
             watcher.NotifyFilter = NotifyFilters.LastWrite;
             watcher.Filter = filter;
             watcher.Changed += new FileSystemEventHandler(OnChanged);
+            watcher.IncludeSubdirectories = false;
             watcher.EnableRaisingEvents = true;
         }
 
